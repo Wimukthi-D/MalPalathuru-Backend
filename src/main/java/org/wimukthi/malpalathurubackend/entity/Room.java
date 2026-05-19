@@ -9,13 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "room")
+@Table(name = "rooms")
 public class Room {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "room_code",nullable = false, unique = true,length = 10)
+    @Column(name = "room_code", nullable = false, unique = true, length = 10)
     private String roomCode;
 
     @Enumerated(EnumType.STRING)
@@ -28,15 +29,15 @@ public class Room {
     @Column(name = "count_limit_seconds", nullable = false)
     private Integer countLimitSeconds;
 
-//    @Column(name = "private_room", nullable = false)
-//    private Boolean privateRoom;
+    @Column(name = "private_room", nullable = false)
+    private Boolean privateRoom;
 
-    @Column(name = "locked", nullable = false )
+    @Column(name = "locked", nullable = false)
     private Boolean locked;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private RoomStatus roomStatus;
+    private RoomStatus status;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -47,7 +48,8 @@ public class Room {
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Player> players = new ArrayList<>();
 
-    public Room() {}
+    public Room() {
+    }
 
     public Long getId() {
         return id;
@@ -85,6 +87,14 @@ public class Room {
         this.countLimitSeconds = countLimitSeconds;
     }
 
+    public Boolean getPrivateRoom() {
+        return privateRoom;
+    }
+
+    public void setPrivateRoom(Boolean privateRoom) {
+        this.privateRoom = privateRoom;
+    }
+
     public Boolean getLocked() {
         return locked;
     }
@@ -93,12 +103,12 @@ public class Room {
         this.locked = locked;
     }
 
-    public RoomStatus getRoomStatus() {
-        return roomStatus;
+    public RoomStatus getStatus() {
+        return status;
     }
 
-    public void setRoomStatus(RoomStatus roomStatus) {
-        this.roomStatus = roomStatus;
+    public void setStatus(RoomStatus status) {
+        this.status = status;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -120,5 +130,5 @@ public class Room {
     public List<Player> getPlayers() {
         return players;
     }
-
 }
+
