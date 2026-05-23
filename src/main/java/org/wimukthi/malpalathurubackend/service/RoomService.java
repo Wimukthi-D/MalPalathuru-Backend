@@ -14,8 +14,6 @@ import org.wimukthi.malpalathurubackend.repository.RoomRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.wimukthi.malpalathurubackend.dto.RoomEventResponse;
-import org.wimukthi.malpalathurubackend.dto.UpdateReadyRequest;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -171,35 +169,6 @@ public class RoomService {
     }
 
     @Transactional
-    public RoomResponse updateReadyStatus(
-            String roomCode,
-            Long playerId,
-            UpdateReadyRequest request
-    ) {
-        Room room = getRoomEntityByCode(roomCode);
-
-        validateRoomInLobby(room);
-
-        Player player = getPlayerInRoom(room, playerId);
-
-        if (Boolean.TRUE.equals(player.getHost())) {
-            throw new IllegalStateException("Host does not need to mark ready");
-        }
-
-        player.setReady(request.ready());
-        playerRepository.save(player);
-
-        broadcastRoomState(
-                room.getRoomCode(),
-                "PLAYER_READY_UPDATED",
-                "Player ready status updated",
-                player.getId()
-        );
-
-        return getRoomByCode(room.getRoomCode());
-    }
-
-    @Transactional
     public RoomResponse kickPlayer(
             String roomCode,
             Long targetPlayerId,
@@ -207,14 +176,20 @@ public class RoomService {
     ) {
         Room room = getRoomEntityByCode(roomCode);
 
-        validateRoomInLobby(room);
         validateHost(room, hostPlayerId);
 
         Player targetPlayer = getPlayerInRoom(room, targetPlayerId);
 
         if (Boolean.TRUE.equals(targetPlayer.getHost())) {
+            if (targetPlayerId.equals(hostPlayerId)) {
+                closeRoomBecauseHostLeft(room, targetPlayer.getId());
+                return null;
+            }
+
             throw new IllegalStateException("Host cannot be kicked");
         }
+
+        validateRoomInLobby(room);
 
         playerRepository.delete(targetPlayer);
 
@@ -225,6 +200,30 @@ public class RoomService {
                 "PLAYER_KICKED",
                 "Player was removed from the room",
                 targetPlayerId
+        );
+
+        return response;
+    }
+
+    @Transactional
+    public RoomResponse leaveRoom(String roomCode, Long playerId) {
+        Room room = getRoomEntityByCode(roomCode);
+        Player player = getPlayerInRoom(room, playerId);
+
+        if (Boolean.TRUE.equals(player.getHost())) {
+            closeRoomBecauseHostLeft(room, player.getId());
+            return null;
+        }
+
+        playerRepository.delete(player);
+
+        RoomResponse response = getRoomByCode(room.getRoomCode());
+
+        broadcastRoomState(
+                room.getRoomCode(),
+                "PLAYER_LEFT",
+                "Player left the room",
+                playerId
         );
 
         return response;
@@ -264,10 +263,49 @@ public class RoomService {
                 player.getId(),
                 player.getPlayerName(),
                 player.getHost(),
-                player.getReady(),
                 player.getConnected(),
                 player.getTotalScore()
         );
+    }
+
+    private RoomResponse mapRoomToResponse(Room room, List<Player> players) {
+        List<PlayerResponse> playerResponses = players.stream()
+                .map(this::mapPlayerToResponse)
+                .toList();
+
+        return new RoomResponse(
+                room.getId(),
+                room.getRoomCode(),
+                room.getLanguage(),
+                room.getMaxPlayers(),
+                room.getCountLimitSeconds(),
+                room.getPrivateRoom(),
+                room.getLocked(),
+                room.getStatus(),
+                playerResponses
+        );
+    }
+
+    private void closeRoomBecauseHostLeft(Room room, Long hostPlayerId) {
+        List<Player> players = playerRepository.findByRoom(room);
+
+        players.forEach(player -> player.setConnected(false));
+        room.setLocked(true);
+        room.setStatus(RoomStatus.CLOSED);
+        room.setClosedAt(LocalDateTime.now());
+
+        RoomResponse closingRoomState = mapRoomToResponse(room, players);
+
+        broadcastRoomEvent(
+                room.getRoomCode(),
+                "ROOM_CLOSED",
+                "Host left the room",
+                hostPlayerId,
+                closingRoomState
+        );
+
+        playerRepository.deleteAll(players);
+        roomRepository.delete(room);
     }
 
     private String generateUniqueRoomCode() {
@@ -317,8 +355,16 @@ public class RoomService {
     }
 
     private void broadcastRoomState(String roomCode, String eventType, String message, Long affectedPlayerId) {
-        RoomResponse roomResponse = getRoomByCode(roomCode);
+        broadcastRoomEvent(roomCode, eventType, message, affectedPlayerId, getRoomByCode(roomCode));
+    }
 
+    private void broadcastRoomEvent(
+            String roomCode,
+            String eventType,
+            String message,
+            Long affectedPlayerId,
+            RoomResponse roomResponse
+    ) {
         RoomEventResponse event =  new RoomEventResponse(
                 eventType,
                 message,
@@ -327,7 +373,7 @@ public class RoomService {
         );
 
         messagingTemplate.convertAndSend(
-                "/topic/rooms" + roomCode + "state",
+                "/topic/rooms/" + roomCode + "/state",
                 event
         );
     }

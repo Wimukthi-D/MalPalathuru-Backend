@@ -2,11 +2,11 @@ package org.wimukthi.malpalathurubackend.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.wimukthi.malpalathurubackend.dto.CreateRoomRequest;
 import org.wimukthi.malpalathurubackend.dto.JoinRoomRequest;
 import org.wimukthi.malpalathurubackend.dto.RoomResponse;
-import org.wimukthi.malpalathurubackend.entity.Room;
 import org.wimukthi.malpalathurubackend.service.RoomService;
 
 @RestController
@@ -45,7 +45,24 @@ public class RoomController {
         return roomService.unlockRoom(roomCode, hostPlayerId);
     }
 
-    @PatchMapping("/{roomCode}/players/{playerId}")
+    @DeleteMapping("/{roomCode}/players/{playerId}")
+    public ResponseEntity<RoomResponse> removePlayer(
+            @PathVariable String roomCode,
+            @PathVariable Long playerId,
+            @RequestParam(required = false) Long hostPlayerId
+    ){
+        RoomResponse response = hostPlayerId == null
+                ? roomService.leaveRoom(roomCode, playerId)
+                : roomService.kickPlayer(roomCode, playerId, hostPlayerId);
+
+        if (response == null) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{roomCode}/start")
     public RoomResponse startGame(@PathVariable String roomCode, @RequestParam Long hostPlayerId){
         return roomService.startGame(roomCode, hostPlayerId);
     }
