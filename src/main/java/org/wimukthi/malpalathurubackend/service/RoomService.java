@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.wimukthi.malpalathurubackend.dto.RoomEventResponse;
 import org.wimukthi.malpalathurubackend.dto.UpdateReadyRequest;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -327,7 +326,7 @@ public class RoomService {
         );
 
         messagingTemplate.convertAndSend(
-                "/topic/rooms" + roomCode + "state",
+                "/topic/rooms/" + roomCode + "/state",
                 event
         );
     }

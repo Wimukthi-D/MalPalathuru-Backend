@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import org.wimukthi.malpalathurubackend.dto.CreateRoomRequest;
 import org.wimukthi.malpalathurubackend.dto.JoinRoomRequest;
 import org.wimukthi.malpalathurubackend.dto.RoomResponse;
-import org.wimukthi.malpalathurubackend.entity.Room;
+import org.wimukthi.malpalathurubackend.dto.UpdateReadyRequest;
 import org.wimukthi.malpalathurubackend.service.RoomService;
 
 @RestController
@@ -45,7 +45,25 @@ public class RoomController {
         return roomService.unlockRoom(roomCode, hostPlayerId);
     }
 
-    @PatchMapping("/{roomCode}/players/{playerId}")
+    @PatchMapping("/{roomCode}/players/{playerId}/ready")
+    public RoomResponse updateReadyStatus(
+            @PathVariable String roomCode,
+            @PathVariable Long playerId,
+            @Valid @RequestBody UpdateReadyRequest request
+    ){
+        return roomService.updateReadyStatus(roomCode, playerId, request);
+    }
+
+    @DeleteMapping("/{roomCode}/players/{playerId}")
+    public RoomResponse kickPlayer(
+            @PathVariable String roomCode,
+            @PathVariable Long playerId,
+            @RequestParam Long hostPlayerId
+    ){
+        return roomService.kickPlayer(roomCode, playerId, hostPlayerId);
+    }
+
+    @PatchMapping("/{roomCode}/start")
     public RoomResponse startGame(@PathVariable String roomCode, @RequestParam Long hostPlayerId){
         return roomService.startGame(roomCode, hostPlayerId);
     }
