@@ -14,6 +14,39 @@ public record RoomResponse(
         Boolean privateRoom,
         Boolean locked,
         RoomStatus status,
-        List <PlayerResponse> players
+        List<PlayerResponse> players,
+        Integer totalRounds,
+        Integer currentRoundNumber,
+        RoundResponse currentRound,
+        List<RoundSummaryResponse> rounds,
+        List<String> usedLetters
 ) {
+    public RoomResponse(
+            Long id,
+            String roomCode,
+            Language language,
+            Integer maxPlayers,
+            Integer countLimitSeconds,
+            Boolean privateRoom,
+            Boolean locked,
+            RoomStatus status,
+            List<PlayerResponse> players
+    ) {
+        this(
+                id,
+                roomCode,
+                language,
+                maxPlayers,
+                countLimitSeconds,
+                privateRoom,
+                locked,
+                status,
+                players,
+                null,
+                null,
+                null,
+                List.of(),
+                List.of()
+        );
+    }
 }

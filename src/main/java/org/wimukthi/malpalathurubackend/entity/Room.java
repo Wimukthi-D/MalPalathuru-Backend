@@ -45,8 +45,17 @@ public class Room {
     @Column(name = "closed_at")
     private LocalDateTime closedAt;
 
+    @Column(name = "total_rounds")
+    private Integer totalRounds;
+
+    @Column(name = "current_round_number")
+    private Integer currentRoundNumber;
+
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Player> players = new ArrayList<>();
+
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Round> rounds = new ArrayList<>();
 
     public Room() {
     }
@@ -127,8 +136,27 @@ public class Room {
         this.closedAt = closedAt;
     }
 
+    public Integer getTotalRounds() {
+        return totalRounds;
+    }
+
+    public void setTotalRounds(Integer totalRounds) {
+        this.totalRounds = totalRounds;
+    }
+
+    public Integer getCurrentRoundNumber() {
+        return currentRoundNumber;
+    }
+
+    public void setCurrentRoundNumber(Integer currentRoundNumber) {
+        this.currentRoundNumber = currentRoundNumber;
+    }
+
     public List<Player> getPlayers() {
         return players;
     }
-}
 
+    public List<Round> getRounds() {
+        return rounds;
+    }
+}

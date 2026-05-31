@@ -1,13 +1,11 @@
 package org.wimukthi.malpalathurubackend.enums;
 
-public enum RoomStatus {
-    LOBBY,
-    LETTER_SELECTION,
+public enum RoundStatus {
+    WAITING_FOR_LETTER,
     PLAYING,
     COUNTDOWN_STARTED,
     ANSWER_LOCKED,
     REVIEWING,
-    ROUND_LEADERBOARD,
-    FINISHED,
-    CLOSED
+    SCORE_READY,
+    COMPLETED
 }
